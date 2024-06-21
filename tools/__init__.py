@@ -1,1 +1,1 @@
-__all__  = ['dataset','net']
+__all__  = ['dataset','net','train']

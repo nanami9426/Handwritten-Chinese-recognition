@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch
 import PIL
 import pathlib
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader,random_split
 
 
 class HWVocab:
@@ -76,10 +76,17 @@ class HWDataset(Dataset):
         return (self.vocab.lable2char(item[1]),img)
 
 
-def get_data_loader(data_dir,batch_size:int,shuffle:bool):
+def get_data_loader(data_dir,batch_size:int,shuffle:bool,is_train=True,split_ratio=0.5):
     dataset = HWDataset(data_dir=data_dir)
     num_labels = len(dataset.vocab)
-    loader = DataLoader(dataset=dataset,batch_size=batch_size,shuffle=shuffle)
-    return loader,num_labels
-
-    
+    if is_train:
+        loader = DataLoader(dataset=dataset,batch_size=batch_size,shuffle=shuffle)
+        return loader,num_labels,dataset
+    else:
+        ratio = split_ratio
+        val_size = int(ratio*len(dataset))
+        tes_size = len(dataset) - val_size
+        val_dataset,test_dataset = random_split(dataset,[val_size,tes_size])
+        val_loader = DataLoader(dataset=val_dataset,batch_size=batch_size,shuffle=shuffle)
+        test_loader = DataLoader(dataset=test_dataset,batch_size=batch_size,shuffle=shuffle)
+        return val_loader,test_loader,num_labels,val_dataset,test_dataset
