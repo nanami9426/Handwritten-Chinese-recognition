@@ -8,8 +8,6 @@ import time
 from dataset import get_data_loader
 from net import HWNet
 
-device = torch.device("cuda")
-batch_size = 256
 
 def train(net,data_loader,loss_fn,optimizer,device):
     size = len(data_loader.dataset)
@@ -22,11 +20,11 @@ def train(net,data_loader,loss_fn,optimizer,device):
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        if batch%10==0:
+        if batch%2==0:
             loss = loss.item()
             current_batch = (batch+1)*len(X)
             print(f' loss:{loss:>.5f},[{current_batch:>5d}/{size:>5d}]',end='\r')
-    print(f"Already trained a epoch,wait for test ...")
+    print(f"Already trained an epoch,waiting for validate ...")
 
 def test(net,data_loader,loss_fn,device):
     size = len(data_loader.dataset)
@@ -45,21 +43,29 @@ def test(net,data_loader,loss_fn,device):
         correct /= size
         print(f"Test error:\n accuracy: {(100*correct):0.1f}%, avg loss: {test_loss:.5f}")
 
-
-if __name__ == '__main__':
-    trn_loader,num_labels_trn,tsn_set = get_data_loader('../data/train',batch_size,True)
-    val_loader,tst_loader,num_labels_tst,val_set,tst_set = get_data_loader('../data/test',batch_size,True,False)
-    net = HWNet(num_labels_trn).to(device)
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(net.parameters(), lr=2e-3)
-    epochs = 32
+def run(net,loss_fn,optimizer,epochs):
     for t in range(epochs):
         print(f"Epoch {t+1}")
         start = time.time()
         train(net,trn_loader , loss_fn, optimizer,device)
         test(net,tst_loader, loss_fn,device)
+        torch.save(net.state_dict(), 'handwriting.params')
         end = time.time()
         interval = (end-start)
         print(f"Time : {interval:.3f}s\n-------------------------------")
     print('***End of train***')
     test(net,val_loader,loss_fn,device)
+
+if __name__ == '__main__':
+    device = torch.device("cuda")
+    batch_size=16
+    lr = 3e-3
+    epochs = 12
+    tst_data_dir = '../data_for_test/test'
+    trn_data_dir = '../data_for_test/train'
+    trn_loader,num_labels_trn,tsn_set = get_data_loader(trn_data_dir,batch_size,True)
+    val_loader,tst_loader,num_labels_tst,val_set,tst_set = get_data_loader(tst_data_dir,batch_size,True,False)
+    net = HWNet(num_labels_trn).to(device)
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    run(net=net,loss_fn=loss_fn,optimizer=optimizer,epochs=epochs)
