@@ -2,6 +2,8 @@ data/
 data_for_test/
 sourcedata/
 *.pth
+*.pt
+*.params
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
